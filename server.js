@@ -64,7 +64,7 @@ app.get("/debug-tls", (req, res) => {
     tlsTest(27017),
     tlsTest(27017, "www.google.com"),
     fetch("https://www.google.com").then((r) => ({ test: "google", ok: true, status: r.status })).catch((e) => ({ test: "google", ok: false, error: e.message })),
-  ]).then((results) => res.json({ host, maskedUri, results }));
+  ]).then((results) => res.json({ node: process.version, host, maskedUri, results }));
 });
 
 app.use(async (req, res, next) => {
