@@ -30,9 +30,9 @@ async function startServer() {
     app.use("/students", studentsRoutes);
     app.use('/teachers' , teachersRoutes)
 
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
+   if (process.env.NODE_ENV !== "production") {
+     app.listen(5000, () => console.log("Server running on port 5000"));
+   }
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
     process.exit(1);
