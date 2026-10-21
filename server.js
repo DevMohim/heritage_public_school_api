@@ -4,41 +4,47 @@ import { MongoClient } from "mongodb";
 import "dotenv/config";
 
 import studentsRoutes from "./routes/students.js";
-import teachersRoutes from './routes/teachers.js'
+import teachersRoutes from "./routes/teachers.js";
 
 const app = express();
-const port = 5000;
 const uri = process.env.MONGODB_URI;
+
+if (!uri) {
+  throw new Error("MONGODB_URI is not set");
+}
+
+const client = new MongoClient(uri);
+const dbPromise = client
+  .connect()
+  .then(() => client.db("School-Management-DB"));
 
 app.use(cors());
 app.use(express.json());
-
-const client = new MongoClient(uri);
 
 app.get("/", (req, res) => {
   res.send("Server running successfully");
 });
 
-async function startServer() {
+// MongoDB connect হওয়ার পর collections attach করে routes চালু হবে
+app.use(async (req, res, next) => {
   try {
-    await client.connect();
-
-    const db = client.db("School-Management-DB");
+    const db = await dbPromise;
     app.locals.studentsCollection = db.collection("Students");
-    app.locals.teachersCollection = db.collection('Teachers')
-
-    app.use("/students", studentsRoutes);
-    app.use('/teachers' , teachersRoutes)
-
-   if (process.env.NODE_ENV !== "production") {
-     app.listen(5000, () => console.log("Server running on port 5000"));
-   }
+    app.locals.teachersCollection = db.collection("Teachers");
+    next();
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
-    process.exit(1);
+    res.status(500).json({ message: "Database connection failed" });
   }
+});
+
+app.use("/students", studentsRoutes);
+app.use("/teachers", teachersRoutes);
+
+// লোকাল development-এ server চালু রাখুন
+if (process.env.NODE_ENV !== "production") {
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => console.log(`Server running on port ${port}`));
 }
 
-startServer();
-
-export default app
+export default app;
